@@ -20,7 +20,8 @@ var _ io.Closer = (*CIDTrack)(nil)
 
 // CIDTrack is a Per CID bandwidth tracker
 type CIDTrack struct {
-	t *tracker
+	t     *tracker
+	btswp *bitswap.Bitswap
 }
 
 // Name should return unique name of the plugin
@@ -30,7 +31,7 @@ func (c *CIDTrack) Name() string {
 
 // Version returns current version of the plugin
 func (c *CIDTrack) Version() string {
-	return "0.1.0"
+	return "0.2.0"
 }
 
 // Init is called once when the Plugin is being loaded
@@ -48,8 +49,9 @@ func (c *CIDTrack) Start(node *core.IpfsNode) error {
 	if !ok {
 		return errors.New("couldn't cast node.Exchange as *bitswap.Bitswap")
 	}
-
 	c.t = newTracker()
+	c.btswp = btswp
+
 	bitswap.EnableWireTap(NewWireTap(c.t))(btswp)
 
 	go c.t.run()
@@ -84,6 +86,7 @@ func (c *CIDTrack) handleReset(w http.ResponseWriter, r *http.Request) {
 
 func (c *CIDTrack) Close() error {
 	fmt.Println("CIDTrack is stopping")
+	bitswap.DisableWireTap()(c.btswp)
 	return c.t.stop()
 }
 

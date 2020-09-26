@@ -34,10 +34,8 @@ func (t *tracker) run() {
 		case <-t.stopCh:
 			break
 		case s := <-t.recv:
-			fmt.Printf("recv cid=%s\tsize=%d\n", s.cid, s.size)
 			t.increment(s.cid, uint64(s.size), 0)
 		case s := <-t.sent:
-			fmt.Printf("sent cid=%s\tsize=%d\n", s.cid, s.size)
 			t.increment(s.cid, 0, uint64(s.size))
 		}
 	}
