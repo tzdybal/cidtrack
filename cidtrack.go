@@ -1,8 +1,12 @@
 package cidtrack
 
 import (
+	"encoding/csv"
 	"errors"
 	"fmt"
+	"io"
+	"net/http"
+	"strconv"
 
 	"github.com/ipfs/go-bitswap"
 	"github.com/ipfs/go-ipfs/core"
@@ -12,9 +16,12 @@ import (
 
 var log = logging.Logger("cidtrack")
 var _ plugin.PluginDaemonInternal = (*CIDTrack)(nil)
+var _ io.Closer = (*CIDTrack)(nil)
 
 // CIDTrack is a Per CID bandwidth tracker
-type CIDTrack struct{}
+type CIDTrack struct {
+	t *tracker
+}
 
 // Name should return unique name of the plugin
 func (c *CIDTrack) Name() string {
@@ -42,13 +49,42 @@ func (c *CIDTrack) Start(node *core.IpfsNode) error {
 		return errors.New("couldn't cast node.Exchange as *bitswap.Bitswap")
 	}
 
-	t := newTracker()
-	bitswap.EnableWireTap(NewWireTap(t))(btswp)
+	c.t = newTracker()
+	bitswap.EnableWireTap(NewWireTap(c.t))(btswp)
 
-	go t.run()
-	fmt.Println("CIDTrack is running!")
+	go c.t.run()
+	log.Info("CIDTrack is running!")
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/get", c.handleGet)
+	mux.HandleFunc("/reset", c.handleReset)
+
+	go http.ListenAndServe(":5002", mux)
 
 	return nil
+}
+
+func (c *CIDTrack) handleGet(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/csv")
+
+	writer := csv.NewWriter(w)
+	for cid, s := range c.t.stats {
+		writer.Write([]string{cid.String(), strconv.FormatUint(s.recv, 10), strconv.FormatUint(s.sent, 10)})
+	}
+	writer.Flush()
+
+	if r.URL.Path == "/get/reset" {
+		c.t.reset()
+	}
+}
+
+func (c *CIDTrack) handleReset(w http.ResponseWriter, r *http.Request) {
+	c.t.reset()
+}
+
+func (c *CIDTrack) Close() error {
+	fmt.Println("CIDTrack is stopping")
+	return c.t.stop()
 }
 
 // Plugins is an exported list of plugins that will be loaded by go-ipfs.

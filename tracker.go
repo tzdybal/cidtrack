@@ -1,38 +1,65 @@
 package cidtrack
 
 import (
+	"fmt"
+
 	cid "github.com/ipfs/go-cid"
 )
 
 type tracker struct {
-	recv chan stat
-	sent chan stat
+	recv   chan stat
+	sent   chan stat
+	stopCh chan interface{}
 
-	recvStats map[cid.Cid]uint64
-	sentStats map[cid.Cid]uint64
+	stats map[cid.Cid]*bwstat
+}
+
+type bwstat struct {
+	recv uint64
+	sent uint64
 }
 
 func newTracker() *tracker {
 	return &tracker{
-		recv:      make(chan stat),
-		sent:      make(chan stat),
-		recvStats: make(map[cid.Cid]uint64),
-		sentStats: make(map[cid.Cid]uint64),
+		recv:   make(chan stat),
+		sent:   make(chan stat),
+		stopCh: make(chan interface{}),
+		stats:  make(map[cid.Cid]*bwstat),
 	}
 }
 
 func (t *tracker) run() {
 	for {
-		// TODO(tzdybal): gently exit
 		select {
+		case <-t.stopCh:
+			break
 		case s := <-t.recv:
-			log.Debugf("recv cid=%s\tsize=%d\n", s.cid, s.size)
-			t.recvStats[s.cid] += uint64(s.size)
+			fmt.Printf("recv cid=%s\tsize=%d\n", s.cid, s.size)
+			t.increment(s.cid, uint64(s.size), 0)
 		case s := <-t.sent:
-			log.Debugf("sent cid=%s\tsize=%d\n", s.cid, s.size)
-			t.sentStats[s.cid] += uint64(s.size)
+			fmt.Printf("sent cid=%s\tsize=%d\n", s.cid, s.size)
+			t.increment(s.cid, 0, uint64(s.size))
 		}
 	}
+}
+
+func (t *tracker) increment(c cid.Cid, recv, sent uint64) {
+	s, ok := t.stats[c]
+	if ok {
+		s.sent += sent
+		s.recv += recv
+	} else {
+		t.stats[c] = &bwstat{recv: recv, sent: sent}
+	}
+}
+
+func (t *tracker) stop() error {
+	close(t.stopCh)
+	return nil
+}
+
+func (t *tracker) reset() {
+	t.stats = make(map[cid.Cid]*bwstat)
 }
 
 func (t *tracker) recvChan() chan stat {
