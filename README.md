@@ -29,6 +29,7 @@ Plugin can be accessed via HTTP endpoint, listening on `listenAddress`.
 `{listenAddress}/get` returns all statistics gathered by CIDTracker.
 Data is returned as CSV, with following columns:
 | CID | bytes received | bytes sent |
+|-----|----------------|------------|
 
 `{listenAddress}/get/reset` returns all stats and then resets/clears all collected data.
 
