@@ -3,7 +3,6 @@ package cidtrack
 import (
 	"encoding/csv"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -15,36 +14,48 @@ import (
 )
 
 var log = logging.Logger("cidtrack")
+
+// ensure that interfaces are implemented
 var _ plugin.PluginDaemonInternal = (*CIDTrack)(nil)
 var _ io.Closer = (*CIDTrack)(nil)
 
 // CIDTrack is a Per CID bandwidth tracker
 type CIDTrack struct {
-	t     *tracker
-	btswp *bitswap.Bitswap
+	t      *tracker
+	btswp  *bitswap.Bitswap
+	config struct {
+		listenAddress string
+	}
 }
 
 // Name should return unique name of the plugin
 func (c *CIDTrack) Name() string {
-	return "cidtrack"
+	return "CIDtrack"
 }
 
 // Version returns current version of the plugin
 func (c *CIDTrack) Version() string {
-	return "0.2.0"
+	return "0.3.0"
 }
 
 // Init is called once when the Plugin is being loaded
 // The plugin is passed an environment containing the path to the
 // (possibly uninitialized) IPFS repo and the plugin's config.
 func (c *CIDTrack) Init(env *plugin.Environment) error {
-	log.Info("cidtrack is being initialized!")
+	log.Info("CIDtrack is being initialized!")
+	if env.Config == nil { // defaults
+		c.config.listenAddress = ":5002"
+	} else {
+		confMap := env.Config.(map[string]interface{})
+		c.config.listenAddress = confMap["listenAddress"].(string)
+	}
+	log.Info("listenAddress:", c.config.listenAddress)
 	return nil
 }
 
 // Starts starts a plugin
 func (c *CIDTrack) Start(node *core.IpfsNode) error {
-	log.Info("cidtrack is starting!")
+	log.Info("CIDtrack is starting!")
 	btswp, ok := node.Exchange.(*bitswap.Bitswap)
 	if !ok {
 		return errors.New("couldn't cast node.Exchange as *bitswap.Bitswap")
@@ -61,7 +72,7 @@ func (c *CIDTrack) Start(node *core.IpfsNode) error {
 	mux.HandleFunc("/get", c.handleGet)
 	mux.HandleFunc("/reset", c.handleReset)
 
-	go http.ListenAndServe(":5002", mux)
+	go http.ListenAndServe(c.config.listenAddress, mux)
 
 	return nil
 }
@@ -85,7 +96,7 @@ func (c *CIDTrack) handleReset(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *CIDTrack) Close() error {
-	fmt.Println("CIDTrack is stopping")
+	log.Info("CIDTrack is stopping")
 	bitswap.DisableWireTap()(c.btswp)
 	return c.t.stop()
 }

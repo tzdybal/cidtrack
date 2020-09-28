@@ -1,8 +1,6 @@
 package cidtrack
 
 import (
-	"fmt"
-
 	cid "github.com/ipfs/go-cid"
 )
 
