@@ -26,7 +26,10 @@ jobs:
     
     - name: Use go-bitswap with WireTap
       run: go mod edit -replace github.com/ipfs/go-bitswap=github.com/ipfs/go-bitswap@bc3df6b
-           
+    
+    - name: Clean codecov configuration
+      run: rm codecov.yml
+    
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
       with:
