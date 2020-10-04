@@ -1,5 +1,6 @@
 [![Go](https://github.com/tzdybal/cidtrack/workflows/Go/badge.svg)](https://github.com/tzdybal/cidtrack/actions/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tzdybal/cidtrack)](https://goreportcard.com/report/github.com/tzdybal/cidtrack)
+[![codecov](https://codecov.io/gh/tzdybal/cidtrack/branch/master/graph/badge.svg?token=XGG4KBZQUC)](https://codecov.io/gh/tzdybal/cidtrack)
 
 # cidtrack
 Per CID bandwidth tracking for IPFS daemon.
