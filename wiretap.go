@@ -8,7 +8,7 @@ import (
 	peer "github.com/libp2p/go-libp2p-peer"
 )
 
-// WireTap implementes go-bitswap WireTap interface
+// WireTap implements go-bitswap WireTap interface
 type wireTap struct {
 	stats   map[cid.Cid]uint64
 	statsCh chan cid.Cid
