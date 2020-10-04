@@ -24,7 +24,9 @@ func TestWiretap(t *testing.T) {
 	// Give some time to process thru channel
 	time.Sleep(100 * time.Millisecond)
 
+	tap.mtx.RLock()
 	assert.Len(t, tap.stats, 10*10)
+	tap.mtx.RUnlock()
 }
 
 func getMessageWith10RandomBlocks() message.BitSwapMessage {
