@@ -1,37 +1,51 @@
 package cidtrack
 
 import (
+	"sync"
+
 	bsmsg "github.com/ipfs/go-bitswap/message"
 	cid "github.com/ipfs/go-cid"
 	peer "github.com/libp2p/go-libp2p-peer"
 )
 
-type WireTap struct {
-	consumer statConsumer
+// WireTap implementes go-bitswap WireTap interface
+type wireTap struct {
+	stats   map[cid.Cid]uint64
+	statsCh chan cid.Cid
+	mtx     sync.RWMutex
 }
 
-type stat struct {
-	cid  cid.Cid
-	size int
-}
-
-type statConsumer interface {
-	recvChan() chan stat
-	sentChan() chan stat
-}
-
-func NewWireTap(c statConsumer) *WireTap {
-	return &WireTap{consumer: c}
-}
-
-func (t *WireTap) MessageReceived(p peer.ID, msg bsmsg.BitSwapMessage) {
-	for _, block := range msg.Blocks() {
-		t.consumer.recvChan() <- stat{block.Cid(), len(block.RawData())}
+func newWireTap() *wireTap {
+	return &wireTap{
+		stats:   make(map[cid.Cid]uint64),
+		statsCh: make(chan cid.Cid),
 	}
 }
 
-func (t *WireTap) MessageSent(p peer.ID, msg bsmsg.BitSwapMessage) {
+func (t *wireTap) run() {
+	for c := range t.statsCh {
+		t.mtx.Lock()
+		t.stats[c]++
+		t.mtx.Unlock()
+	}
+}
+
+func (t *wireTap) reset() {
+	t.mtx.Lock()
+	t.stats = make(map[cid.Cid]uint64)
+	t.mtx.Unlock()
+}
+
+func (t *wireTap) stop() {
+	close(t.statsCh)
+}
+
+func (t *wireTap) MessageReceived(p peer.ID, msg bsmsg.BitSwapMessage) {
+	// We're not interested in received messages
+}
+
+func (t *wireTap) MessageSent(p peer.ID, msg bsmsg.BitSwapMessage) {
 	for _, block := range msg.Blocks() {
-		t.consumer.sentChan() <- stat{block.Cid(), len(block.RawData())}
+		t.statsCh <- block.Cid()
 	}
 }
