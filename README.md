@@ -1,6 +1,5 @@
 [![Go](https://github.com/tzdybal/cidtrack/workflows/Go/badge.svg)](https://github.com/tzdybal/cidtrack/actions/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/tzdybal/cidtrack)](https://goreportcard.com/report/github.com/tzdybal/cidtrack)
-[![codecov](https://codecov.io/gh/tzdybal/cidtrack/branch/master/graph/badge.svg?token=XGG4KBZQUC)](https://codecov.io/gh/tzdybal/cidtrack)
 
 # cidtrack
 Per CID bandwidth tracking for IPFS daemon.
@@ -9,10 +8,15 @@ CIDTrack is a ipfs daemon plugin that counts how many times a block was sent to 
 Currently it's a low level utility that counts raw block usage, without taking care about subblocks (see https://docs.ipfs.io/how-to/work-with-blocks/). 
 
 ## Building
-Currently this plugin can be compiled "in source tree".
+Currently this plugin can be compiled only "in-tree".
 Required steps:
-1. `cd /path/to/go-ipfs/plugin/plugins`
-1. `git clone github.com:tzdybal/cidtrack.git`
+1. `git clone https://github.com/ipfs/go-ipfs.git`
+1. `cd go-ipfs`
+1. `go mod edit -replace github.com/ipfs/go-bitswap=github.com/ipfs/go-bitswap@bc3df6b`
+1. `cd plugin/plugins/`
+1. `sed -i -e 's/\(\$(d)_plugins:=.*\)/\1 $(d)\/cidtrack/' Rules.mk`
+1. `git clone https://github.com/tzdybal/cidtrack.git`
+1. `mkdir ~/.ipfs/plugins`
 1. `make -C cidtrack`
 
 ## Configuration
