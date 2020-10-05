@@ -24,10 +24,10 @@ By default CIDTracker listen on ":5002" (port 5002 on all addresses).
 This can be changed using `listenAddress` configuration, for example:
 ```
   "Plugins": {
-	"Plugins": {
+    "Plugins": {
       "CIDtrack": {
         "Config": {
-		  "listenAddress": "127.0.0.1:8888"
+          "listenAddress": "127.0.0.1:8888"
         }
       }
     }
