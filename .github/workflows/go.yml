@@ -48,3 +48,18 @@ jobs:
       run: |
         cd plugin/plugins/cidtrack
         go test -v -race -cover
+
+    - name: Build daemon and use plugin
+      run: |
+          mkdir -p ~/.ipfs/plugins
+          go mod edit -replace github.com/ipfs/go-bitswap=github.com/ipfs/go-bitswap@bc3df6b
+          cd plugin/plugins/
+          sed -i -e 's/\(\$(d)_plugins:=.*\)/\1 $(d)\/cidtrack/' Rules.mk
+          cd -
+          make build
+          make -C plugin/plugins/cidtrack
+          ./cmd/ipfs/ipfs init
+          ./cmd/ipfs/ipfs daemon &
+          sleep 10
+          curl 'http://127.0.0.1:5002/get'
+          pkill ipfs
