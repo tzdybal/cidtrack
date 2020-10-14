@@ -24,42 +24,36 @@ jobs:
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
       with:
+        path: go-ipfs
         repository: ipfs/go-ipfs
     
     - name: Use go-bitswap with WireTap
-      run: go mod edit -replace github.com/ipfs/go-bitswap=github.com/ipfs/go-bitswap@bc3df6b
+      run: |
+          cd go-ipfs
+          go get -v github.com/ipfs/go-bitswap@bc3df6b
+          make build
     
     - name: Check out code into the Go module directory
       uses: actions/checkout@v2
       with:
-        path: plugin/plugins/cidtrack
-
-    - name: Get dependencies
-      run: |
-        cd plugin/plugins/cidtrack
-        go get -v -t -d ./...
+          path: cidtrack
 
     - name: Build
       run: |
-        cd plugin/plugins/cidtrack
-        go build -v .
+          cd cidtrack
+          make go.mod IPFS_VERSION=$PWD/../go-ipfs
+          make install 
 
     - name: Test
       run: |
-        cd plugin/plugins/cidtrack
-        go test -v -race -cover
+          cd cidtrack
+          make test
 
-    - name: Build daemon and use plugin
+    - name: Start daemon and use plugin
       run: |
-          mkdir -p ~/.ipfs/plugins
-          go mod edit -replace github.com/ipfs/go-bitswap=github.com/ipfs/go-bitswap@bc3df6b
-          cd plugin/plugins/
-          sed -i -e 's/\(\$(d)_plugins:=.*\)/\1 $(d)\/cidtrack/' Rules.mk
-          cd -
-          make build
-          make -C plugin/plugins/cidtrack
+          cd go-ipfs
           ./cmd/ipfs/ipfs init
           ./cmd/ipfs/ipfs daemon &
-          sleep 10
+          sleep 30
           curl 'http://127.0.0.1:5002/get'
           pkill ipfs
