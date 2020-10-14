@@ -8,16 +8,19 @@ CIDTrack is a ipfs daemon plugin that counts how many times a block was sent to 
 Currently it's a low level utility that counts raw block usage, without taking care about subblocks (see https://docs.ipfs.io/how-to/work-with-blocks/). 
 
 ## Building
-Currently this plugin can be compiled only "in-tree".
-Required steps:
+Building is done out of tree (of go-ipfs). Currently you have to checkout go-ipfs and manually update go-bitswap dependency, because change adding `WireTap` is merged into master but not yet released.
+
+Daemon:
 1. `git clone https://github.com/ipfs/go-ipfs.git`
 1. `cd go-ipfs`
-1. `go mod edit -replace github.com/ipfs/go-bitswap=github.com/ipfs/go-bitswap@bc3df6b`
-1. `cd plugin/plugins/`
-1. `sed -i -e 's/\(\$(d)_plugins:=.*\)/\1 $(d)\/cidtrack/' Rules.mk`
+1. `go get -v github.com/ipfs/go-bitswap@bc3df6b`
+1. `go build`
+
+Plugin:
 1. `git clone https://github.com/tzdybal/cidtrack.git`
-1. `mkdir ~/.ipfs/plugins`
-1. `make -C cidtrack`
+1. `cd cidtrack`
+1. `make go.mod IPFS_VERSION=/ABSOLUTE/PATH/TO/go-ipfs`
+1. `make install`
 
 ## Configuration
 By default CIDTracker listen on ":5002" (port 5002 on all addresses).
