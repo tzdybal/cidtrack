@@ -55,5 +55,8 @@ jobs:
           ./cmd/ipfs/ipfs init
           ./cmd/ipfs/ipfs daemon &
           sleep 30
+          dd if=/dev/urandom of=/tmp/unique.dat bs=1024 count=512
+          CID=`./cmd/ipfs/ipfs add /tmp/unique.dat | grep added | cut -f2 -d' '`
+          curl -o /dev/null http://ipfs.io/ipfs/$CID
           curl 'http://127.0.0.1:5002/get'
           pkill ipfs
