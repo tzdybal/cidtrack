@@ -53,7 +53,7 @@ jobs:
       run: |
           cd go-ipfs
           ./cmd/ipfs/ipfs init
-          ./cmd/ipfs/ipfs daemon &
+          (IPFS_LOGGING=debug ./cmd/ipfs/ipfs daemon 2>&1 | grep cidtrack) &
           sleep 30
           dd if=/dev/urandom of=/tmp/unique.dat bs=1024 count=512
           CID=`./cmd/ipfs/ipfs add /tmp/unique.dat | grep added | cut -f2 -d' '`
